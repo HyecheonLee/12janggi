@@ -11,16 +11,16 @@ import (
 type GimulType int
 
 const (
-	GimulTypeNone GimulType = -1 + iota
-	GimulTypeGreenWang
-	GimulTypeGreenJa
-	GimulTypeGreenJang
-	GimulTypeGreenSang
-	GimulTypeRedWang
-	GimulTypeRedJa
-	GimulTypeRedJang
-	GimulTypeRedSang
-	GimulTypeMax
+	GimulNone GimulType = -1 + iota
+	GimulGreenWang
+	GimulGreenJa
+	GimulGreenJang
+	GimulGreenSang
+	GimulRedWang
+	GimulRedJa
+	GimulRedJang
+	GimulRedSang
+	GimulMax
 )
 const (
 	GimulStartX  = 20
@@ -33,17 +33,28 @@ const (
 	ScreenHeight = 362
 )
 
+type TeamType int
+
+const (
+	TeamNone TeamType = iota
+	TeamGreen
+	TeamRed
+)
+
 var (
 	board       [BoardWidth][BoardHeight]GimulType
 	bgimg       *ebiten.Image
 	selectedImg *ebiten.Image
-	gimulImgs   [GimulTypeMax]*ebiten.Image
+	gimulImgs   [GimulMax]*ebiten.Image
 	selected    bool
 	selectedX   int
 	selectedY   int
+	currentTeam TeamType = TeamGreen
+	gameOver    bool     = false
 )
 
 func main() {
+
 	var err error
 	err = loadImages(err)
 	boardInit()
@@ -55,18 +66,18 @@ func main() {
 func boardInit() {
 	for i := 0; i < BoardWidth; i++ {
 		for j := 0; j < BoardHeight; j++ {
-			board[i][j] = GimulTypeNone
+			board[i][j] = GimulNone
 		}
 	}
-	board[0][0] = GimulTypeGreenSang
-	board[0][1] = GimulTypeGreenWang
-	board[0][2] = GimulTypeGreenJang
-	board[1][1] = GimulTypeGreenJa
+	board[0][0] = GimulGreenSang
+	board[0][1] = GimulGreenWang
+	board[0][2] = GimulGreenJang
+	board[1][1] = GimulGreenJa
 
-	board[3][0] = GimulTypeRedSang
-	board[3][1] = GimulTypeRedWang
-	board[3][2] = GimulTypeRedJang
-	board[2][1] = GimulTypeRedJa
+	board[3][0] = GimulRedSang
+	board[3][1] = GimulRedWang
+	board[3][2] = GimulRedJang
+	board[2][1] = GimulRedJa
 }
 
 func loadImages(err error) error {
@@ -74,35 +85,35 @@ func loadImages(err error) error {
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeGreenWang], _, err = ebitenutil.NewImageFromFile("./images/green_wang.png", ebiten.FilterDefault)
+	gimulImgs[GimulGreenWang], _, err = ebitenutil.NewImageFromFile("./images/green_wang.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeGreenJa], _, err = ebitenutil.NewImageFromFile("./images/green_ja.png", ebiten.FilterDefault)
+	gimulImgs[GimulGreenJa], _, err = ebitenutil.NewImageFromFile("./images/green_ja.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeGreenJang], _, err = ebitenutil.NewImageFromFile("./images/green_jang.png", ebiten.FilterDefault)
+	gimulImgs[GimulGreenJang], _, err = ebitenutil.NewImageFromFile("./images/green_jang.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeGreenSang], _, err = ebitenutil.NewImageFromFile("./images/green_sang.png", ebiten.FilterDefault)
+	gimulImgs[GimulGreenSang], _, err = ebitenutil.NewImageFromFile("./images/green_sang.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeRedWang], _, err = ebitenutil.NewImageFromFile("./images/red_wang.png", ebiten.FilterDefault)
+	gimulImgs[GimulRedWang], _, err = ebitenutil.NewImageFromFile("./images/red_wang.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeRedJa], _, err = ebitenutil.NewImageFromFile("./images/red_ja.png", ebiten.FilterDefault)
+	gimulImgs[GimulRedJa], _, err = ebitenutil.NewImageFromFile("./images/red_ja.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeRedJang], _, err = ebitenutil.NewImageFromFile("./images/red_jang.png", ebiten.FilterDefault)
+	gimulImgs[GimulRedJang], _, err = ebitenutil.NewImageFromFile("./images/red_jang.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
-	gimulImgs[GimulTypeRedSang], _, err = ebitenutil.NewImageFromFile("./images/red_sang.png", ebiten.FilterDefault)
+	gimulImgs[GimulRedSang], _, err = ebitenutil.NewImageFromFile("./images/red_sang.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
@@ -113,53 +124,72 @@ func loadImages(err error) error {
 
 	return err
 }
-
+func GetTeamType(gimulType GimulType) TeamType {
+	if gimulType == GimulGreenJa ||
+		gimulType == GimulGreenJang ||
+		gimulType == GimulGreenSang ||
+		gimulType == GimulGreenWang {
+		return TeamGreen
+	}
+	if gimulType == GimulRedJa ||
+		gimulType == GimulRedJang ||
+		gimulType == GimulRedSang ||
+		gimulType == GimulRedWang {
+		return TeamRed
+	}
+	return TeamNone
+}
 func update(screen *ebiten.Image) error {
+	screen.DrawImage(bgimg, nil)
+	if gameOver {
+		return nil
+	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 		i, j := x/GridWidth, y/GridHeight
-		if selected {
-			if i == selectedX && j == selectedY {
-				selected = false
+		if i >= 0 && i < GridWidth && j >= 0 && j < GridHeight {
+			if selected {
+				if i == selectedX && j == selectedY {
+					selected = false
+				} else {
+					moveGimul(selectedX, selectedY, i, j)
+				}
 			} else {
-				move(selectedX, selectedY, i, j)
-			}
-		} else {
-			if board[i][j] != GimulTypeNone {
-				selected = true
-				selectedX, selectedY = i, j
+				if board[i][j] != GimulNone && currentTeam == GetTeamType(board[i][j]) {
+					selected = true
+					selectedX, selectedY = i, j
+				}
 			}
 		}
 	}
-	screen.DrawImage(bgimg, nil)
 	for i := 0; i < BoardWidth; i++ {
 		for j := 0; j < BoardHeight; j++ {
 			opts := &ebiten.DrawImageOptions{}
 			opts.GeoM.Translate(float64(GimulStartX+GridWidth*i), float64(GimulStartY+j*GridHeight))
 			switch board[i][j] {
-			case GimulTypeGreenWang:
-				screen.DrawImage(gimulImgs[GimulTypeGreenWang], opts)
+			case GimulGreenWang:
+				screen.DrawImage(gimulImgs[GimulGreenWang], opts)
 				//Draw GreenWang
-			case GimulTypeGreenJa:
-				screen.DrawImage(gimulImgs[GimulTypeGreenJa], opts)
+			case GimulGreenJa:
+				screen.DrawImage(gimulImgs[GimulGreenJa], opts)
 				//Draw GreenJa
-			case GimulTypeGreenJang:
-				screen.DrawImage(gimulImgs[GimulTypeGreenJang], opts)
+			case GimulGreenJang:
+				screen.DrawImage(gimulImgs[GimulGreenJang], opts)
 				//Draw GreenJang
-			case GimulTypeGreenSang:
-				screen.DrawImage(gimulImgs[GimulTypeGreenSang], opts)
+			case GimulGreenSang:
+				screen.DrawImage(gimulImgs[GimulGreenSang], opts)
 				//Draw GreenSang
-			case GimulTypeRedWang:
-				screen.DrawImage(gimulImgs[GimulTypeRedWang], opts)
+			case GimulRedWang:
+				screen.DrawImage(gimulImgs[GimulRedWang], opts)
 				//Draw RedWang
-			case GimulTypeRedJa:
-				screen.DrawImage(gimulImgs[GimulTypeRedJa], opts)
+			case GimulRedJa:
+				screen.DrawImage(gimulImgs[GimulRedJa], opts)
 				//Draw RedJa
-			case GimulTypeRedJang:
-				screen.DrawImage(gimulImgs[GimulTypeRedJang], opts)
+			case GimulRedJang:
+				screen.DrawImage(gimulImgs[GimulRedJang], opts)
 				//Draw RedJang
-			case GimulTypeRedSang:
-				screen.DrawImage(gimulImgs[GimulTypeRedSang], opts)
+			case GimulRedSang:
+				screen.DrawImage(gimulImgs[GimulRedSang], opts)
 				//Draw RedJa
 			}
 		}
@@ -172,10 +202,16 @@ func update(screen *ebiten.Image) error {
 	return nil
 }
 
-func move(prevX int, prevY int, tarX int, tarY int) {
+func moveGimul(prevX int, prevY int, tarX int, tarY int) {
 	if isMovable(prevX, prevY, tarX, tarY) {
-		board[prevX][prevY], board[tarX][tarY] = GimulTypeNone, board[prevX][prevY]
+		OnDie(board[tarX][tarY])
+		board[prevX][prevY], board[tarX][tarY] = GimulNone, board[prevX][prevY]
 		selected = false
+		if currentTeam == TeamGreen {
+			currentTeam = TeamRed
+		} else {
+			currentTeam = TeamGreen
+		}
 	}
 }
 func abs(a int) int {
@@ -184,6 +220,11 @@ func abs(a int) int {
 	}
 	return a
 }
+func OnDie(gimulType GimulType) {
+	if gimulType == GimulGreenWang || gimulType == GimulRedWang {
+		gameOver = true
+	}
+}
 func isMovable(prevX int, prevY int, tarX int, tarY int) bool {
 	if tarX < 0 || tarY < 0 {
 		return false
@@ -191,17 +232,20 @@ func isMovable(prevX int, prevY int, tarX int, tarY int) bool {
 	if tarX >= BoardWidth || tarY >= BoardHeight {
 		return false
 	}
+	if GetTeamType(board[prevX][prevY]) == GetTeamType(board[tarX][tarY]) {
+		return false
+	}
 	switch board[prevX][prevY] {
-	case GimulTypeGreenJa:
+	case GimulGreenJa:
 		return prevX+1 == tarX && prevY == tarY
-	case GimulTypeRedJa:
+	case GimulRedJa:
 		return prevX-1 == tarX && prevY == tarY
-	case GimulTypeGreenSang, GimulTypeRedSang:
+	case GimulGreenSang, GimulRedSang:
 		return (abs(prevX-tarX) == 1) && (abs(prevY-tarY) == 1)
-	case GimulTypeGreenJang, GimulTypeRedJang:
+	case GimulGreenJang, GimulRedJang:
 		return abs(prevX-tarX)+abs(prevY-tarY) == 1
-	case GimulTypeGreenWang, GimulTypeRedWang:
-		return (abs(prevX-tarX) == 1) || (abs(prevY-tarY) == 1)
+	case GimulGreenWang, GimulRedWang:
+		return abs(prevX-tarX) <= 1 || abs(prevY-tarY) <= 1
 	}
 	return false
 }
