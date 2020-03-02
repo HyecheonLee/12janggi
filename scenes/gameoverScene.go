@@ -8,23 +8,23 @@ import (
 	"log"
 )
 
-type StartScene struct {
-	startImg *ebiten.Image
+type GameOverScene struct {
+	gameOverImg *ebiten.Image
 }
 
-func (s *StartScene) Startup() {
+func (g *GameOverScene) Startup() {
 	var err error
-	s.startImg, _, err = ebitenutil.NewImageFromFile("./images/start.png", ebiten.FilterDefault)
+	g.gameOverImg, _, err = ebitenutil.NewImageFromFile("./images/gameover.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatalf("read file error: %v", err)
 	}
 }
 
-func (s *StartScene) Update(screen *ebiten.Image) error {
-	screen.DrawImage(s.startImg, nil)
+func (g *GameOverScene) Update(screen *ebiten.Image) error {
+	screen.DrawImage(g.gameOverImg, nil)
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		// Set GameScene
-		scenemanager.SetScene(&GameScene{})
+		scenemanager.SetScene(&StartScene{})
 	}
 	return nil
 }

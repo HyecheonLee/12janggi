@@ -3,6 +3,7 @@ package scenemanager
 import "github.com/hajimehoshi/ebiten"
 
 type Scene interface {
+	Startup()
 	Update(*ebiten.Image) error
 }
 type scenemanager struct {
@@ -23,4 +24,5 @@ func Update(screen *ebiten.Image) error {
 }
 func SetScene(scene Scene) {
 	manager.currentScene = scene
+	scene.Startup()
 }
