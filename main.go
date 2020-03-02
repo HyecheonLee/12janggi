@@ -1,6 +1,8 @@
 package main
 
 import (
+	"12janggi/scenemanager"
+	"12janggi/scenes"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
@@ -58,7 +60,10 @@ func main() {
 	var err error
 	err = loadImages(err)
 	boardInit()
-	err = ebiten.Run(update, ScreenWidth, ScreenHeight, 1.0, "12 Janggi")
+
+	scenemanager.SetScene(&scenes.StartScene{})
+
+	err = ebiten.Run(scenemanager.Update, ScreenWidth, ScreenHeight, 1.0, "12 Janggi")
 	if err != nil {
 		log.Fatalf("Ebiten run error: %v", err)
 	}
